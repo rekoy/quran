@@ -1,0 +1,36 @@
+/* Tajweed Colors */
+.ham_wasl {
+  color: #aaaaaa;
+}
+
+.slnt {
+  color: #aaaaaa;
+}
+
+.madda_normal {
+  color: #537fff;
+}
+
+.madda_permissible {
+  color: #4050ff;
+}
+
+.madda_necessary {
+  color: #000ebc;
+}
+
+.qlq {
+  color: #dd0008;
+}
+
+/* Additional Tajweed styles */
+.tajweed-text {
+  font-family: var(--font-amiri), "Scheherazade New", Arial, sans-serif;
+  line-height: 2;
+  text-align: right;
+}
+
+.tajweed-text span {
+  font-size: inherit;
+  font-family: inherit;
+}

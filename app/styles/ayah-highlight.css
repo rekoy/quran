@@ -1,0 +1,22 @@
+/* Style for highlighted ayahs */
+.highlight-ayah {
+  animation: highlight-fade 3s ease-out;
+  scroll-margin-top: 100px;
+}
+
+@keyframes highlight-fade {
+  0% {
+    background-color: rgba(254, 240, 138, 0.7); /* Light yellow */
+  }
+  70% {
+    background-color: rgba(254, 240, 138, 0.5);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Add proper scroll spacing for fixed header */
+[id^="ayah-"] {
+  scroll-margin-top: 80px;
+}
