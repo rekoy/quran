@@ -1,0 +1,15 @@
+name = "quran-website"
+compatibility_date = "2023-12-01"
+
+[build]
+command = "npm run build"
+
+[build.upload]
+format = "directory"
+
+[vars]
+NODE_VERSION = "18.18.0"
+NEXT_OUTPUT = "export"
+
+[site]
+bucket = "out"
