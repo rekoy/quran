@@ -13,6 +13,7 @@ import { Loader2 } from "lucide-react"
 import VideoPlayer from "@/app/components/VideoPlayer"
 import { ErrorBoundary } from "react-error-boundary"
 import { removeBismillah } from "@/lib/quranUtils"
+import BismillahHeader from "./components/BismillahHeader"
 
 interface Surah {
   number: number
@@ -125,16 +126,33 @@ async function getSurahDetails(
       slug: createSlug(arabicData.data.englishName),
     }
 
+    const cleanAyahs = (ayahs: Ayah[], surahNumber: number) => {
+      return ayahs.map((ayah, index) => {
+        if (ayah.numberInSurah === 1 && surahNumber !== 1 && surahNumber !== 9) {
+          // Remove Bismillah from first ayah (except Al-Fatihah and At-Tawbah)
+          return {
+            ...ayah,
+            text: removeBismillah(ayah.text, surahNumber, ayah.numberInSurah),
+          }
+        }
+        return ayah
+      })
+    }
+
     const arabicAyahsWithAudio = arabicData.data.ayahs.map((ayah: Ayah, index: number) => ({
       ...ayah,
       audio: audioData.data.ayahs[index].audio,
     }))
 
+    const cleanedArabicAyahs = cleanAyahs(arabicAyahsWithAudio, surahData.number)
+    const cleanedEnglishAyahs = cleanAyahs(englishData.data.ayahs, surahData.number)
+    const cleanedTransliterationAyahs = cleanAyahs(transliterationData.data.ayahs, surahData.number)
+
     return {
       surah,
-      arabicAyahs: arabicAyahsWithAudio,
-      englishAyahs: englishData.data.ayahs,
-      transliterationAyahs: transliterationData.data.ayahs,
+      arabicAyahs: cleanedArabicAyahs,
+      englishAyahs: cleanedEnglishAyahs,
+      transliterationAyahs: cleanedTransliterationAyahs,
     }
   } catch (error) {
     console.error("Error in getSurahDetails:", error)
@@ -216,10 +234,23 @@ export default function SurahPage({ params }: { params: { slug: string } }) {
         throw new Error("Failed to load Surah data")
       })
       .then(([indonesianData, japaneseData, chineseData, koreanData]) => {
-        setIndonesianAyahs(indonesianData.data.ayahs)
-        setJapaneseAyahs(japaneseData.data.ayahs)
-        setChineseAyahs(chineseData.data.ayahs)
-        setKoreanAyahs(koreanData.data.ayahs)
+        const surahNumber = surahData?.surah.number || 0
+        const cleanAyahsData = (ayahs: Ayah[]) => {
+          return ayahs.map((ayah) => {
+            if (ayah.numberInSurah === 1 && surahNumber !== 1 && surahNumber !== 9) {
+              return {
+                ...ayah,
+                text: removeBismillah(ayah.text, surahNumber, ayah.numberInSurah),
+              }
+            }
+            return ayah
+          })
+        }
+
+        setIndonesianAyahs(cleanAyahsData(indonesianData.data.ayahs))
+        setJapaneseAyahs(cleanAyahsData(japaneseData.data.ayahs))
+        setChineseAyahs(cleanAyahsData(chineseData.data.ayahs))
+        setKoreanAyahs(cleanAyahsData(koreanData.data.ayahs))
         console.log("Successfully set translations data")
       })
       .catch((error) => {
@@ -295,6 +326,25 @@ export default function SurahPage({ params }: { params: { slug: string } }) {
     return `${baseUrl}/surah/${params.slug}?ayah=${ayahNumber}&lang=${language}`
   }
 
+  const getTranslation = (index: number) => {
+    switch (language) {
+      case "ar":
+        return surahData?.arabicAyahs[index].text
+      case "en":
+        return surahData?.englishAyahs[index]?.text || "Translation not available"
+      case "id":
+        return indonesianAyahs[index]?.text || "Terjemahan tidak tersedia"
+      case "ja":
+        return japaneseAyahs[index]?.text || "翻訳がありません"
+      case "zh":
+        return chineseAyahs[index]?.text || "翻訳不可用"
+      case "ko":
+        return koreanAyahs[index]?.text || "번역을 사용할 수 없습니다"
+      default:
+        return surahData?.englishAyahs[index]?.text || "Translation not available"
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#00AD5F] flex items-center justify-center">
@@ -361,26 +411,6 @@ export default function SurahPage({ params }: { params: { slug: string } }) {
     }
   }
 
-  // Get the appropriate translation based on the current language
-  const getTranslation = (index: number) => {
-    switch (language) {
-      case "ar":
-        return removeBismillah(arabicAyahs[index].text, surah.number, arabicAyahs[index].numberInSurah)
-      case "en":
-        return englishAyahs[index]?.text || "Translation not available"
-      case "id":
-        return indonesianAyahs[index]?.text || "Terjemahan tidak tersedia"
-      case "ja":
-        return japaneseAyahs[index]?.text || "翻訳がありません"
-      case "zh":
-        return chineseAyahs[index]?.text || "翻译不可用"
-      case "ko":
-        return koreanAyahs[index]?.text || "번역을 사용할 수 없습니다"
-      default:
-        return englishAyahs[index]?.text || "Translation not available"
-    }
-  }
-
   return (
     <ErrorBoundary
       FallbackComponent={ErrorFallback}
@@ -408,6 +438,7 @@ export default function SurahPage({ params }: { params: { slug: string } }) {
               <strong>Revelation Type:</strong> {surah.revelationType}
             </p>
           </div>
+          <BismillahHeader surahNumber={surah.number} />
           <div className="space-y-6">
             {arabicAyahs.map((ayah, index) => (
               <div
@@ -422,16 +453,13 @@ export default function SurahPage({ params }: { params: { slug: string } }) {
                   <span className="font-bold text-primary-foreground">{ayah.numberInSurah}</span>
                   <div className="flex items-center gap-4">
                     <ShareButtons
-                      text={`${removeBismillah(ayah.text, surah.number, ayah.numberInSurah)}
+                      text={`${ayah.text}
 
 ${getTranslation(index)}`}
                       url={getAyahShareUrl(ayah.numberInSurah)}
                       meta={{
                         title: `${surah.englishName} (${surah.name}) - Ayah ${ayah.numberInSurah}`,
-                        description: `${removeBismillah(ayah.text, surah.number, ayah.numberInSurah).slice(
-                          0,
-                          100,
-                        )}... - Read more on Quran.co`,
+                        description: `${ayah.text.slice(0, 100)}... - Read more on Quran.co`,
                         imageUrl: `https://quran.co/api/og-image?surah=${surah.number}&ayah=${ayah.numberInSurah}`,
                       }}
                     />
@@ -446,7 +474,7 @@ ${getTranslation(index)}`}
                 <p
                   className="text-2xl my-4 py-2 text-right font-arabic"
                   dangerouslySetInnerHTML={{
-                    __html: removeBismillah(ayah.text, surah.number, ayah.numberInSurah),
+                    __html: ayah.text,
                   }}
                 />
                 <p className="text-lg mb-2 text-left text-gray-600 italic">
