@@ -15,8 +15,16 @@ export default function AudioPlayer({ audioSrc, onPlay, onEnded }: AudioPlayerPr
 
   const handlePlay = () => {
     if (audioRef.current) {
-      audioRef.current.play()
-      onPlay()
+      const playPromise = audioRef.current.play()
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            onPlay()
+          })
+          .catch((error) => {
+            console.error("Audio playback failed:", error)
+          })
+      }
     }
   }
 
@@ -32,7 +40,7 @@ export default function AudioPlayer({ audioSrc, onPlay, onEnded }: AudioPlayerPr
 
   return (
     <>
-      <audio ref={audioRef} src={audioSrc} />
+      <audio ref={audioRef} src={audioSrc} crossOrigin="anonymous" />
       <Button
         variant="outline"
         size="icon"

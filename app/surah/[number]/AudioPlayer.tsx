@@ -20,19 +20,25 @@ export default function AudioPlayer({ audioSrc, onPlay, onEnded }: AudioPlayerPr
     }
   }
 
+  const handleError = () => {
+    console.error("Failed to load audio")
+  }
+
   useEffect(() => {
     const audio = audioRef.current
     if (audio) {
       audio.addEventListener("ended", onEnded)
+      audio.addEventListener("error", handleError)
       return () => {
         audio.removeEventListener("ended", onEnded)
+        audio.removeEventListener("error", handleError)
       }
     }
   }, [onEnded])
 
   return (
     <>
-      <audio ref={audioRef} src={audioSrc} />
+      <audio ref={audioRef} src={audioSrc} crossOrigin="anonymous" />
       <Button
         variant="outline"
         size="icon"

@@ -60,27 +60,37 @@ function FloatingPlayer({
     if (isVideoPlaying) {
       audio.pause()
       setIsPlaying(false)
-    } else {
-      audio.play().catch((error) => console.error("Error playing audio:", error))
-      setIsPlaying(true)
     }
+    // Remove automatic play attempt - mobile browsers block autoplay
 
     return () => {
       audio.removeEventListener("loadeddata", setAudioData)
       audio.removeEventListener("timeupdate", setAudioTime)
       audio.removeEventListener("ended", onAudioEnded)
     }
-  }, [isVideoPlaying, onAudioEnded, handleEnded]) // Removed unnecessary dependency: audioSrc
+  }, [isVideoPlaying, onAudioEnded, handleEnded])
 
   const togglePlayPause = () => {
     const audio = audioRef.current
     if (audio && !isVideoPlaying) {
       if (isPlaying) {
         audio.pause()
+        setIsPlaying(false)
       } else {
-        audio.play().catch((error) => console.error("Error playing audio:", error))
+        const playPromise = audio.play()
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              setIsPlaying(true)
+            })
+            .catch((error) => {
+              console.error("Audio playback failed:", error)
+              setIsPlaying(false)
+            })
+        } else {
+          setIsPlaying(true)
+        }
       }
-      setIsPlaying(!isPlaying)
     }
   }
 
@@ -109,7 +119,7 @@ function FloatingPlayer({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg p-4 z-50">
-      <audio ref={audioRef} src={audioSrc} />
+      <audio ref={audioRef} src={audioSrc} crossOrigin="anonymous" />
       <div className="flex items-center justify-between max-w-4xl mx-auto">
         <div className="flex-1">
           <h3 className="font-medium">{surahName}</h3>
