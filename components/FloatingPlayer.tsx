@@ -175,7 +175,7 @@ function FloatingPlayer({
           </Button>
         </div>
         <div className="flex-1 ml-4">
-          <Slider defaultValue={[0]} value={[currentTime]} max={duration} step={0.1} onValueChange={handleSliderChange} />
+          <Slider value={[currentTime]} max={duration} step={0.1} onValueChange={handleSliderChange} />
         </div>
       </div>
     </div>
