@@ -14,35 +14,41 @@ interface AudioPlayerProps {
 export default function AudioPlayer({ audioSrc, onPlay, onEnded, disabled }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
-  const [error, setError] = useState(false)
 
   const togglePlayPause = () => {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause()
+        setIsPlaying(false)
       } else {
-        audioRef.current.play()
-        onPlay()
+        const playPromise = audioRef.current.play()
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              setIsPlaying(true)
+              onPlay()
+            })
+            .catch((err) => {
+              console.warn("Audio play failed:", err.message)
+              setIsPlaying(false)
+            })
+        }
       }
-      setIsPlaying(!isPlaying)
     }
   }
 
   useEffect(() => {
     const audio = audioRef.current
-    if (audio) {
-      audio.addEventListener("ended", () => {
-        setIsPlaying(false)
-        onEnded()
-      })
-      audio.addEventListener("error", () => {
-        setError(true)
-        setIsPlaying(false)
-      })
-      return () => {
-        audio.removeEventListener("ended", onEnded)
-        audio.removeEventListener("error", () => setError(true))
-      }
+    if (!audio) return
+
+    const handleEnded = () => {
+      setIsPlaying(false)
+      onEnded()
+    }
+
+    audio.addEventListener("ended", handleEnded)
+    return () => {
+      audio.removeEventListener("ended", handleEnded)
     }
   }, [onEnded])
 
@@ -51,20 +57,27 @@ export default function AudioPlayer({ audioSrc, onPlay, onEnded, disabled }: Aud
       audioRef.current?.pause()
       setIsPlaying(false)
     }
-  }, [disabled, isPlaying]) // Added isPlaying to dependencies
+  }, [disabled, isPlaying])
+
+  useEffect(() => {
+    setIsPlaying(false)
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.load()
+    }
+  }, [audioSrc])
 
   return (
     <>
-      <audio ref={audioRef} src={audioSrc} crossOrigin="anonymous" />
-      {error && <p>Error loading audio</p>}
+      <audio ref={audioRef} src={audioSrc} preload="none" />
       <Button
         variant="outline"
         size="icon"
         onClick={togglePlayPause}
-        disabled={disabled || error}
+        disabled={disabled}
         aria-label={isPlaying ? "Pause" : "Play"}
         className={`w-10 h-10 rounded-full bg-[#00AD5F] text-white hover:bg-[#00AD5F]/80 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg ${
-          disabled || error ? "opacity-50 cursor-not-allowed" : ""
+          disabled ? "opacity-50 cursor-not-allowed" : ""
         }`}
       >
         {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
