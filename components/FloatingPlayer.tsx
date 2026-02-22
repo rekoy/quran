@@ -39,6 +39,38 @@ function FloatingPlayer({
     }
   }, [ayahNumber, totalAyahs, onNextAyah, onNextSurah])
 
+  // Handle audio source changes - reload and play
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    audio.pause()
+    audio.load()
+    setCurrentTime(0)
+    setDuration(0)
+    setIsPlaying(false)
+
+    const playWhenReady = () => {
+      if (!isVideoPlaying) {
+        const playPromise = audio.play()
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => setIsPlaying(true))
+            .catch((err) => {
+              console.warn("FloatingPlayer autoplay blocked:", err.message)
+              setIsPlaying(false)
+            })
+        }
+      }
+    }
+
+    audio.addEventListener("canplaythrough", playWhenReady, { once: true })
+    return () => {
+      audio.removeEventListener("canplaythrough", playWhenReady)
+    }
+  }, [audioSrc])
+
+  // Handle audio events
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
@@ -50,23 +82,24 @@ function FloatingPlayer({
 
     const setAudioTime = () => setCurrentTime(audio.currentTime)
 
-    audio.addEventListener("loadeddata", setAudioData)
-    audio.addEventListener("timeupdate", setAudioTime)
-    audio.addEventListener("ended", () => {
+    const handleAudioEnded = () => {
       handleEnded()
       onAudioEnded()
-    })
+    }
+
+    audio.addEventListener("loadeddata", setAudioData)
+    audio.addEventListener("timeupdate", setAudioTime)
+    audio.addEventListener("ended", handleAudioEnded)
 
     if (isVideoPlaying) {
       audio.pause()
       setIsPlaying(false)
     }
-    // Remove automatic play attempt - mobile browsers block autoplay
 
     return () => {
       audio.removeEventListener("loadeddata", setAudioData)
       audio.removeEventListener("timeupdate", setAudioTime)
-      audio.removeEventListener("ended", onAudioEnded)
+      audio.removeEventListener("ended", handleAudioEnded)
     }
   }, [isVideoPlaying, onAudioEnded, handleEnded])
 
