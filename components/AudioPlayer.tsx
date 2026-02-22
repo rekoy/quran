@@ -40,7 +40,7 @@ export default function AudioPlayer({ audioSrc, onPlay, onEnded }: AudioPlayerPr
 
   return (
     <>
-      <audio ref={audioRef} src={audioSrc} crossOrigin="anonymous" />
+      <audio ref={audioRef} src={audioSrc} preload="none" />
       <Button
         variant="outline"
         size="icon"

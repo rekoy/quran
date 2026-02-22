@@ -152,7 +152,7 @@ function FloatingPlayer({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg p-4 z-50">
-      <audio ref={audioRef} src={audioSrc} crossOrigin="anonymous" />
+      <audio ref={audioRef} src={audioSrc} preload="auto" />
       <div className="flex items-center justify-between max-w-4xl mx-auto">
         <div className="flex-1">
           <h3 className="font-medium">{surahName}</h3>
@@ -175,7 +175,7 @@ function FloatingPlayer({
           </Button>
         </div>
         <div className="flex-1 ml-4">
-          <Slider value={[currentTime]} max={duration} step={0.1} onValueChange={handleSliderChange} />
+          <Slider defaultValue={[0]} value={[currentTime]} max={duration} step={0.1} onValueChange={handleSliderChange} />
         </div>
       </div>
     </div>
